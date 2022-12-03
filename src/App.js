@@ -37,16 +37,6 @@ function App() {
     });
   }
 
-  const cropit = () => {
-    var image = new Image();
-    image.src = "logo512.png";
-    const canvas = document.getElementById('mycanvas');
-    const context = canvas.getContext('2d');
-    image.onload = function(){
-      context.drawImage(image, 100, 100, 200, 200, 0, 0, 200, 200);
-    }
-  }
-
   const addimagetozip = () => {
     fetch("/cinemashow-0.2.jar")
     .then(function (response) {
@@ -58,14 +48,23 @@ function App() {
     })
     .then(JSZip.loadAsync)
     .then(function (zip) {
-        const canvas = document.getElementById('mycanvas');
+
+      const image = new Image();
+      image.src = "logo512.png";
+      const canvas = document.createElement('canvas');
+      canvas.width = 200;
+      canvas.height = 200;
+      const context = canvas.getContext('2d');
+      image.onload = function(){
+        context.drawImage(image, 100, 100, 200, 200, 0, 0, 200, 200);
         canvas.toBlob((blob) => {
           zip.file("cropped.png", blob, {base64: true});
           zip.generateAsync({type:"blob"})
           .then(function(content) {
               saveAs(content, "cinemashow.done.jar");
           });
-      });
+        });
+      }
     });
   }
 
@@ -91,14 +90,10 @@ function App() {
         <a className="App-link" onClick={fetchit} >
          Fetch, amend and download JAR
         </a>
-        <a className="App-link" onClick={cropit} >
-         Crop Image
-        </a>
         <a className="App-link" onClick={addimagetozip} >
-         Add to zip
+          Crop Image and add to zip
         </a>
         <input type="file" onChange={previewFile} />
-        <canvas id="mycanvas" width="200px" height="200px"></canvas>
       </header>
     </div>
   );
