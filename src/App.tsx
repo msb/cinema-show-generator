@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import './App.css'
 
 const PIXELS_PER_BLOCK = 16
+// FIXME
+const NUMBER_OF_FRAMES = 8
 
 type Point = {
   x: number
@@ -33,21 +35,22 @@ function loadImageFromDataURL(dataURL: string) {
 function App() {
 
   const [min2ndAxisLength, setMin2ndAxisLength] = useState(Number.MAX_SAFE_INTEGER)
-  const [blocksX, setBlocksX] = useState(6)
+  const [blocksX, setBlocksX] = useState(4)
   const [blocksY, setBlocksY] = useState(0)
+  const [xDefinedAxis, setXDefinedAxis] = useState(true)
 
   function drawImage(image: HTMLImageElement, canvas: HTMLCanvasElement, min2ndAxisLength: number): number {
     let width
     let height
   
-    if (blocksX === 0) {
-        height = blocksY * PIXELS_PER_BLOCK
-        width = height * image.width / image.height
-        min2ndAxisLength = Math.min(min2ndAxisLength, width)
+    if (xDefinedAxis) {
+      width = blocksX * PIXELS_PER_BLOCK
+      height = width * image.height / image.width
+      min2ndAxisLength = Math.min(min2ndAxisLength, height)
     } else {
-        width = blocksX * PIXELS_PER_BLOCK
-        height = width * image.height / image.width
-        min2ndAxisLength = Math.min(min2ndAxisLength, height)
+      height = blocksY * PIXELS_PER_BLOCK
+      width = height * image.width / image.height
+      min2ndAxisLength = Math.min(min2ndAxisLength, width)
     }
     canvas.width = width
     canvas.height = height
@@ -58,10 +61,10 @@ function App() {
   }
 
   function getOffset(imageWidth: number, imageHeight: number): Point {
-    if (blocksX === 0) {
-        return {x: (imageWidth - min2ndAxisLength) / 2, y: 0}
+    if (xDefinedAxis) {
+      return {x: 0, y: (imageHeight - min2ndAxisLength) / 2}
     } else {
-        return {x: 0, y: (imageHeight - min2ndAxisLength) / 2}
+      return {x: (imageWidth - min2ndAxisLength) / 2, y: 0}
     }
   }
 
@@ -83,16 +86,38 @@ function App() {
     // rounds `min2ndAxisLength` down to the nearest `PIXELS_PER_BLOCK` (idempotent)
     min2ndAxisLength -= min2ndAxisLength % PIXELS_PER_BLOCK
 
-    if (blocksX === 0) {
-      setBlocksX(min2ndAxisLength / PIXELS_PER_BLOCK)
-    } else {
+    if (xDefinedAxis) {
       setBlocksY(min2ndAxisLength / PIXELS_PER_BLOCK)
+    } else {
+      setBlocksX(min2ndAxisLength / PIXELS_PER_BLOCK)
     }
     setMin2ndAxisLength(min2ndAxisLength)
-  }
+    console.log(min2ndAxisLength / PIXELS_PER_BLOCK)
+    }
 
   async function generateTextures() {
-    console.log(blocksX, blocksY)
+    for (let x = 0; x < blocksX; x ++) {
+      for (let y = 0; y < blocksY; y ++) {
+        const output = document.getElementById(`${x}_${y}`) as HTMLCanvasElement
+        output.width = PIXELS_PER_BLOCK
+        output.height = PIXELS_PER_BLOCK * NUMBER_OF_FRAMES
+        const outputContext = output.getContext('2d')
+        if (outputContext) {
+          for (let f = 0; f < NUMBER_OF_FRAMES; f ++) {
+            const frame = document.getElementById(`f_${f}`) as HTMLCanvasElement
+            const textureYPos = f * PIXELS_PER_BLOCK
+            const offset = getOffset(frame.width, frame.height)
+            outputContext.drawImage(frame,
+              offset.x + x * PIXELS_PER_BLOCK,
+              offset.y + (blocksY - 1 - y) * PIXELS_PER_BLOCK, 
+              PIXELS_PER_BLOCK, PIXELS_PER_BLOCK,
+              0, textureYPos,
+              PIXELS_PER_BLOCK, PIXELS_PER_BLOCK
+            )
+          }
+        }
+      }
+    }
   }
 
   return (
@@ -103,7 +128,10 @@ function App() {
       <div>
         {
           [0, 1, 2, 3, 4, 5, 6, 7].map(index => (
-            <canvas key={`f_${index}`} id={`f_${index}`} width={10} height={10} />
+            <>
+              <canvas key={`f_${index}`} id={`f_${index}`} width={10} height={10} />
+              &nbsp;
+            </>
           ))
         }
       </div>
@@ -112,9 +140,12 @@ function App() {
       </div>
       <div>
         {
-          [0, 1, 2, 3, 4, 5].map(x => (
-            [0, 1, 2, 3].map(y => (
-              <canvas key={`${x}_${y}`} id={`${x}_${y}`} width={10} height={10} />
+          [0, 1, 2, 3].map(x => (
+            [0, 1, 2].map(y => (
+              <>
+                <canvas key={`${x}_${y}`} id={`${x}_${y}`} width={10} height={10} />
+                &nbsp;
+              </>
             ))
           ))
         }
