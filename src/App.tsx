@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
 import './App.css'
+import * as JSZip from 'jszip'
+import { saveAs } from 'file-saver'
 
 const PIXELS_PER_BLOCK = 16
 // FIXME
@@ -32,12 +34,27 @@ function loadImageFromDataURL(dataURL: string) {
   })
 }
 
+function canvasToBlob(canvas: HTMLCanvasElement) {
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(blob => {
+      if (blob) {
+        resolve(blob)
+      } else {
+        reject("FIXME")
+      }
+    })
+  })
+}
+
 function App() {
 
   const [min2ndAxisLength, setMin2ndAxisLength] = useState(Number.MAX_SAFE_INTEGER)
   const [blocksX, setBlocksX] = useState(4)
   const [blocksY, setBlocksY] = useState(0)
   const [xDefinedAxis, setXDefinedAxis] = useState(true)
+  const [showName, setShowName] = useState("Clowning")
+  const [showSlug, setShowSlug] = useState("clowning")
+  const [frameTime, setFrameTime] = useState(8)
 
   function drawImage(image: HTMLImageElement, canvas: HTMLCanvasElement, min2ndAxisLength: number): number {
     let width
@@ -96,8 +113,17 @@ function App() {
     }
 
   async function generateTextures() {
+
+    const response = await fetch("/cinemashow-0.2.jar")
+    if (response.status !== 200) {
+      // FIXME handle
+      throw new Error(response.statusText)
+    }
+    const zip = await JSZip.loadAsync(response.blob())
+
     for (let x = 0; x < blocksX; x ++) {
       for (let y = 0; y < blocksY; y ++) {
+        // FIXME
         const output = document.getElementById(`${x}_${y}`) as HTMLCanvasElement
         output.width = PIXELS_PER_BLOCK
         output.height = PIXELS_PER_BLOCK * NUMBER_OF_FRAMES
@@ -116,9 +142,16 @@ function App() {
             )
           }
         }
+        const blob = await canvasToBlob(output)
+        const textureName = `/assets/cinemashow/textures/block/show_${showSlug}_${x}_${y}.png`
+        zip.file(textureName, blob, {base64: true})
+        zip.file(`${textureName}.mcmeta`, JSON.stringify({animation: {frametime: frameTime}}))
       }
     }
-  }
+
+    const content = await zip.generateAsync({type:"blob"})
+    saveAs(content, "cinemashow.done.jar")
+}
 
   return (
     <div className="App">
@@ -128,10 +161,10 @@ function App() {
       <div>
         {
           [0, 1, 2, 3, 4, 5, 6, 7].map(index => (
-            <>
-              <canvas key={`f_${index}`} id={`f_${index}`} width={10} height={10} />
+            <span key={`f_${index}`}>
+              <canvas id={`f_${index}`} width={10} height={10} />
               &nbsp;
-            </>
+            </span>
           ))
         }
       </div>
@@ -142,10 +175,10 @@ function App() {
         {
           [0, 1, 2, 3].map(x => (
             [0, 1, 2].map(y => (
-              <>
-                <canvas key={`${x}_${y}`} id={`${x}_${y}`} width={10} height={10} />
+              <span key={`${x}_${y}`}>
+                <canvas id={`${x}_${y}`} width={10} height={10} />
                 &nbsp;
-              </>
+              </span>
             ))
           ))
         }
