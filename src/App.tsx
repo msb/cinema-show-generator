@@ -49,9 +49,9 @@ function canvasToBlob(canvas: HTMLCanvasElement) {
 function App() {
 
   const [min2ndAxisLength, setMin2ndAxisLength] = useState(Number.MAX_SAFE_INTEGER)
-  const [blocksX, setBlocksX] = useState(4)
-  const [blocksY, setBlocksY] = useState(0)
-  const [xDefinedAxis, setXDefinedAxis] = useState(true)
+  const [blocksX, setBlocksX] = useState(0)
+  const [blocksY, setBlocksY] = useState(4)
+  const [xDefinedAxis, setXDefinedAxis] = useState(false)
   const [showName, setShowName] = useState("Clowning")
   const [showSlug, setShowSlug] = useState("clowning")
   const [frameTime, setFrameTime] = useState(8)
@@ -114,7 +114,7 @@ function App() {
 
   async function generateTextures() {
 
-    const response = await fetch("/cinemashow-0.2.jar")
+    const response = await fetch("/cinemashow-0.3.jar")
     if (response.status !== 200) {
       // FIXME handle
       throw new Error(response.statusText)
@@ -135,7 +135,7 @@ function App() {
             const offset = getOffset(frame.width, frame.height)
             outputContext.drawImage(frame,
               offset.x + x * PIXELS_PER_BLOCK,
-              offset.y + (blocksY - 1 - y) * PIXELS_PER_BLOCK, 
+              offset.y + y * PIXELS_PER_BLOCK, 
               PIXELS_PER_BLOCK, PIXELS_PER_BLOCK,
               0, textureYPos,
               PIXELS_PER_BLOCK, PIXELS_PER_BLOCK
@@ -174,7 +174,7 @@ function App() {
       <div>
         {
           [0, 1, 2, 3].map(x => (
-            [0, 1, 2].map(y => (
+            [0, 1, 2, 3].map(y => (
               <span key={`${x}_${y}`}>
                 <canvas id={`${x}_${y}`} width={10} height={10} />
                 &nbsp;
