@@ -108,10 +108,18 @@ function App() {
   
     if (blocksY === 0) {
       width = blocksX * PIXELS_PER_BLOCK
+      if (width > image.width) {
+        // FIXME dis-allow this
+        console.warn("You are scaling up which will result in loss of quality")
+      }
       height = width * image.height / image.width
       min2ndAxisLength = Math.min(min2ndAxisLength, height)
     } else {
       height = blocksY * PIXELS_PER_BLOCK
+      if (height > image.height) {
+        // FIXME dis-allow this
+        console.warn("You are scaling up which will result in loss of quality")
+      }
       width = height * image.width / image.height
       min2ndAxisLength = Math.min(min2ndAxisLength, width)
     }
